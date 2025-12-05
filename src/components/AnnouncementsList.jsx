@@ -17,7 +17,13 @@ export default function AnnouncementsList({ limit = 5 }) {
         setAnnouncements(data.slice(0, limit));
       } catch (err) {
         if (!mounted) return;
-        setError(err.message || 'Failed to load announcements');
+        // If no token is present, don't show an error on the home page (silent failure)
+        if (!localStorage.getItem('token')) {
+          setError(null);
+          setAnnouncements([]);
+        } else {
+          setError(err.message || 'Failed to load announcements');
+        }
       } finally {
         if (mounted) setLoading(false);
       }

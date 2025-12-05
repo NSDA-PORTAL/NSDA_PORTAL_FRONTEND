@@ -15,12 +15,12 @@ const getAuthToken = () => {
 export const fetchAnnouncements = async () => {
     const token = getAuthToken();
     try {
+        // Only include Authorization header when a token exists to avoid sending "Bearer null"
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
         const response = await fetch(ANNOUNCEMENTS_API_BASE, {
-            headers: {
-                'Content-Type': 'application/json',
-                // Pass the JWT token for authentication
-                'Authorization': `Bearer ${token}`, 
-            },
+            headers,
         });
 
         if (!response.ok) {

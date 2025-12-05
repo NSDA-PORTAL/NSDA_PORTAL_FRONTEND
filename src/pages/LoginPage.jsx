@@ -49,6 +49,13 @@ export default function LoginPage(){
         }
     };
 
+    // Fill credential helpers for testing/demo (populate inputs; user then clicks Login)
+    const fillCredentials = (emailVal, passwordVal) => {
+      setError(null);
+      setEmail(emailVal);
+      setPassword(passwordVal);
+    };
+
     return (
     <div className="pt-15 min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
@@ -103,6 +110,25 @@ export default function LoginPage(){
             {loading ? "Logging In..." : "Login"}
           </button>
         </form>
+
+        {/* Quick-fill buttons for demo/testing — they fill inputs, then click Login */}
+        <div className="mt-4 flex gap-3 justify-center">
+          <button
+            type="button"
+            onClick={() => fillCredentials('student@gmail.com', '123456')}
+            className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm"
+          >
+            Fill Student Credentials
+          </button>
+
+          <button
+            type="button"
+            onClick={() => fillCredentials('iman@test.com', '123456')}
+            className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm"
+          >
+            Fill Admin Credentials
+          </button>
+        </div>
 
         <p className="text-center mt-6 text-sm">
           Don't have an account?{" "}
