@@ -14,23 +14,42 @@ const SubmissionListModal = ({ task, onClose }) => {
             setIsLoading(true);
             setError(null);
             try {
-                const response = await fetchSubmissionsByTaskId(task.id);
+                    const response = await fetchSubmissionsByTaskId(task.id);
 
-                const normalized = response.submissions.map(sub => ({
-                    ...sub,
-                    studentName: sub.studentId?.name || 'Unknown Student',
-                    submittedOn: new Date(sub.submittedAt).toLocaleDateString(),
-                    status:
-                        sub.grade === 'pending'
-                            ? 'SUBMITTED'
-                            : sub.grade === 'not-submitted'
-                            ? 'TO_DO'
-                            : 'GRADED',
-                    link: sub.submissionText,
-                }));
+                    // response may be { success, taskTitle, totalPending, submissions: [...] }
+                    const raw = response.submissions || response || [];
 
-                setSubmissions(normalized.filter(s => s.status !== 'TO_DO'));
-            } catch (err) {
+                    const normalized = raw.map(sub => {
+                        // studentName might be provided directly, or nested in studentId object
+                        const studentName = sub.studentName || (sub.studentId && sub.studentId.name) || 'Unknown Student';
+
+                        // studentId may be a string id or an object
+                        const studentId = (sub.studentId && (typeof sub.studentId === 'object' ? (sub.studentId._id || sub.studentId.id) : sub.studentId)) || null;
+
+                        // submission link may be under different fields depending on controller
+                        const link = sub.submissionLink || sub.submissionText || sub.link || (sub.submission && sub.submission.link) || null;
+
+                        // determine status mapping from backend values
+                        let status = 'TO_DO';
+                        const backendStatus = (sub.status || sub.submissionStatus || '').toLowerCase();
+                        if (backendStatus === 'pending-review' || backendStatus === 'pending' || backendStatus === 'submitted') {
+                            status = 'SUBMITTED';
+                        } else if (backendStatus === 'graded' || sub.finalGrade) {
+                            status = 'GRADED';
+                        }
+
+                        return {
+                            ...sub,
+                            studentName,
+                            studentId,
+                            submittedOn: sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : (sub.submittedOn || ''),
+                            status,
+                            link,
+                        };
+                    });
+
+                    setSubmissions(normalized.filter(s => s.status !== 'TO_DO'));
+                } catch (err) {
                 setError("Could not load submissions. Please check API connection.");
             } finally {
                 setIsLoading(false);

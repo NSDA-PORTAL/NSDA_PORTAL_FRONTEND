@@ -47,8 +47,9 @@ const TasksManagement = () => {
         setShowSubmissionsForTask(task);
     };
 
-    const handleTaskCreationSuccess = async (newTaskDetails) => {
-        const createdTask = await createTask(newTaskDetails);
+    const handleTaskCreationSuccess = (createdTask) => {
+        // `TaskCreationModal` already calls the API and returns the created task.
+        // Avoid calling createTask again to prevent duplicate creations.
         setTasks(prev => [createdTask, ...prev]);
     };
 
@@ -94,11 +95,11 @@ const TasksManagement = () => {
             {/* Tasks List */}
             {tasks.map(task => (
                 <TaskCard
-                    key={task.id}
+                    key={task._id || task.id}
                     title={task.title}
-                    dueDate={task.dueDate}
-                    submissions={task.submissions}
-                    onView={() => handleViewSubmissions(task)}
+                    dueDate={task.deadline || task.dueDate}
+                    submissions={task.submissionStats || task.submissions}
+                    onView={() => handleViewSubmissions({ ...task, id: task._id || task.id })}
                 />
             ))}
 

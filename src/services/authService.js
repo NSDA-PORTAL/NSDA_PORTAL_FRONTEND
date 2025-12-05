@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000'; 
+const API_BASE_URL =  import.meta.env.VITE_API_URL; 
 
 // Basic fetch wrapper for public (non-authenticated) routes
 const publicFetch = async (url, options = {}) => {
@@ -8,6 +8,7 @@ const publicFetch = async (url, options = {}) => {
             'Content-Type': 'application/json',
             ...options.headers,
         },
+        
     });
 
     if (!response.ok) {

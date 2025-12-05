@@ -8,8 +8,8 @@ import {
   IconCalendar,
 } from "@tabler/icons-react";
 
-// API Base URL
-const API_BASE_URL = "http://localhost:5000/api/attendance";
+// API Base URL from environment
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api/attendance`;
 
 const AttendancePage = () => {
   const [todayMarked, setTodayMarked] = useState(false);
@@ -19,7 +19,7 @@ const AttendancePage = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("token");
 
   // FIXED: axios instance now has baseURL so token is sent correctly
   const axiosInstance = axios.create({

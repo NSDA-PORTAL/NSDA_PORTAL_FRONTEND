@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios"; 
 
-// Base URLs for the API
-const API_PROFILE_URL = "http://localhost:5000/api/profile/me";
+// Base URLs for the API (use Vite env var)
+const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_PROFILE_URL = `${API_BASE}/api/profile/me`;
 // NOTE: Use the correct endpoint for password change when implemented on the backend
-const API_PASSWORD_URL = "http://localhost:5000/api/auth/password"; 
+const API_PASSWORD_URL = `${API_BASE}/api/auth/password`;
 const AVATAR_URL = "https://i.ibb.co/L50F69W/placeholder-avatar.png";
 
 // Placeholder data for initial load
@@ -23,7 +24,7 @@ const initialData = {
 };
 
 // Function to get the JWT token from localStorage
-const getToken = () => localStorage.getItem('token'); 
+const getToken = () => localStorage.getItem('token');
 
 const ProfilePage = () => {
   const [profileData, setProfileData] = useState(initialData);

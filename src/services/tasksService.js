@@ -1,11 +1,11 @@
 // src/services/tasksService.js
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL =  import.meta.env.VITE_API_URL;
 
 // ----------------------
 // Helper Fetch Wrapper
 // ----------------------
 const fetchApi = async (url, options = {}) => {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
 
     const defaultHeaders = {
         "Content-Type": "application/json",
@@ -78,15 +78,23 @@ export const gradeSubmission = async (
 // STUDENT FUNCTIONS
 // ----------------------
 export const fetchTodoTasks = async () => {
-    return fetchApi("/tasks/student/todo");
+    const res = await fetchApi("/tasks/student/todo");
+    return res.tasks || res.data || res;
 };
 
 export const fetchSubmittedTasks = async () => {
-    return fetchApi("/tasks/student/submitted");
+    const res = await fetchApi("/tasks/student/submitted");
+    return res.tasks || res.data || res;
 };
 
 export const fetchGradedTasks = async () => {
-    return fetchApi("/tasks/student/graded");
+    const res = await fetchApi("/tasks/student/graded");
+    return res.tasks || res.data || res;
+};
+
+export const fetchStudentAll = async () => {
+    const res = await fetchApi('/tasks/student/all');
+    return res.tasks || res.data || res;
 };
 
 export const submitTask = async (taskId, submissionLink, submissionNotes) => {

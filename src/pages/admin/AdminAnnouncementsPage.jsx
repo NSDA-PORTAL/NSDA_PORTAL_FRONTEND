@@ -1,39 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
     IconTrash, IconX, IconSend, IconSpeakerphone, IconAlertTriangle, 
-    IconInfoCircle, IconBolt, IconClock, IconMoodEmpty
+    IconInfoCircle, IconBolt, IconClock, IconMoodEmpty, IconPencil
 } from '@tabler/icons-react';
 
-// === MOCK AUTH & SERVICE LAYER ===
-const useAuth = () => ({
-    user: { role: 'admin' }, 
-});
-const getAuthToken = () => 'MOCK_TOKEN_123';
-const ANNOUNCEMENTS_API_BASE = '/api/announcements';
-
-// --- MOCK SERVICE FUNCTIONS ---
-const fetchAnnouncements = async () => {
-    //console.log("Fetching announcements...");
-    await new Promise(resolve => setTimeout(resolve, 500)); 
-    
-    return [
-        { _id: '1', title: 'Urgent System Maintenance', message: 'The portal will be down tonight from 10 PM to 2 AM UTC for critical security updates.', category: 'urgent', createdAt: new Date(Date.now() - 86400000).toISOString() },
-        { _id: '2', title: 'New Course Enrollment Open', message: 'Enrollment for the Spring 2025 semester is now open. Check your dashboard for details.', category: 'info', createdAt: new Date(Date.now() - 172800000).toISOString() },
-        { _id: '3', title: 'Library Renovation Warning', message: 'The West Wing of the Library will have intermittent noise due to construction.', category: 'warning', createdAt: new Date(Date.now() - 259200000).toISOString() },
-        { _id: '4', title: 'Welcome Back!', message: 'A normal welcome message for all students.', category: 'normal', createdAt: new Date(Date.now() - 345600000).toISOString() },
-    ];
-};
-
-const createAnnouncement = async (announcementData) => {
-    //console.log("MOCK API CALL: Creating announcement:", announcementData);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return { ...announcementData, _id: Date.now().toString(), createdAt: new Date().toISOString() };
-};
-
-const deleteAnnouncement = async (id) => {
-    //console.log("MOCK API CALL: Deleting announcement:", id);
-    await new Promise(resolve => setTimeout(resolve, 500));
-};
+import { useAuth } from '../../context/AuthContext';
+import {
+    fetchAnnouncements,
+    createAnnouncement,
+    deleteAnnouncement,
+    updateAnnouncement,
+} from '../../services/announcementService';
 
 // === CATEGORY DETAIL MAPPER ===
 const getCategoryDetails = (category) => {
@@ -183,6 +160,112 @@ const CreateAnnouncementModal = ({ isVisible, onClose, onAnnouncementCreated }) 
     );
 };
 
+// === EDIT ANNOUNCEMENT MODAL ===
+const EditAnnouncementModal = ({ isVisible, onClose, announcement, onAnnouncementUpdated }) => {
+    const [title, setTitle] = useState(announcement ? announcement.title : '');
+    const [message, setMessage] = useState(announcement ? announcement.message : '');
+    const [category, setCategory] = useState(announcement ? announcement.category : 'info');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (announcement) {
+            setTitle(announcement.title || '');
+            setMessage(announcement.message || '');
+            setCategory(announcement.category || 'info');
+        }
+    }, [announcement]);
+
+    if (!isVisible) return null;
+
+    const handleSubmit = async () => {
+        if (!title.trim() || !message.trim()) {
+            setError('Title and message cannot be empty.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const updated = await updateAnnouncement(announcement._id, {
+                title,
+                message,
+                category: category.toLowerCase(),
+            });
+
+            onAnnouncementUpdated(updated);
+            onClose();
+        } catch (err) {
+            setError(err.message || 'Failed to update announcement.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center p-4">
+            <div className="bg-white  rounded-xl shadow-2xl w-full max-w-lg p-6 relative">
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-1 text-gray-500 hover:text-red-500 transition rounded-full hover:bg-gray-100 "
+                >
+                    <IconX size={22} />
+                </button>
+
+                <h2 className="text-2xl font-bold text-gray-900  mb-6 flex items-center">
+                    <IconPencil size={24} className="mr-2 text-blue-600 " />
+                    Edit Announcement
+                </h2>
+
+                {error && (
+                    <div className="p-3 mb-4 text-sm text-red-800 bg-red-50  rounded-lg">
+                        {error}
+                    </div>
+                )}
+
+                <label className="block mb-2 text-sm font-medium text-gray-700 ">Category</label>
+                <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg  "
+                >
+                    <option value="info">Info</option>
+                    <option value="warning">Warning</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="normal">Normal</option>
+                </select>
+
+                <label className="block mt-4 mb-2 text-sm font-medium text-gray-700 ">Title</label>
+                <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg "
+                    placeholder="Announcement title"
+                />
+
+                <label className="block mt-4 mb-2 text-sm font-medium text-gray-700 ">Message</label>
+                <textarea
+                    rows="4"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg "
+                    placeholder="Write your announcement..."
+                />
+
+                <button
+                    onClick={handleSubmit}
+                    className="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
 // === MAIN PAGE ===
 export default function AdminAnnouncementsPage() {
     const { user } = useAuth();
@@ -190,6 +273,8 @@ export default function AdminAnnouncementsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editAnnouncement, setEditAnnouncement] = useState(null);
 
     const isAdmin = user && (user.role === 'admin' || user.role === 'superadmin');
 
@@ -211,6 +296,10 @@ export default function AdminAnnouncementsPage() {
 
     const handleAnnouncementCreated = (newAnnouncement) => {
         setAnnouncements(prev => [newAnnouncement, ...prev]);
+    };
+
+    const handleAnnouncementUpdated = (updated) => {
+        setAnnouncements(prev => prev.map(a => (a._id === updated._id ? updated : a)));
     };
 
     const handleDelete = async (id) => {
@@ -297,12 +386,24 @@ export default function AdminAnnouncementsPage() {
                                         </div>
 
                                         {isAdmin && (
-                                            <button 
-                                                onClick={() => handleDelete(_id)}
-                                                className="p-2 text-red-600 hover:bg-red-100  rounded-lg"
-                                            >
-                                                <IconTrash size={20} />
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setEditAnnouncement({ _id, title, message, category, createdAt });
+                                                        setShowEditModal(true);
+                                                    }}
+                                                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"
+                                                >
+                                                    <IconPencil size={18} />
+                                                </button>
+
+                                                <button 
+                                                    onClick={() => handleDelete(_id)}
+                                                    className="p-2 text-red-600 hover:bg-red-100  rounded-lg"
+                                                >
+                                                    <IconTrash size={20} />
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -317,6 +418,12 @@ export default function AdminAnnouncementsPage() {
                 isVisible={showModal} 
                 onClose={() => setShowModal(false)} 
                 onAnnouncementCreated={handleAnnouncementCreated}
+            />
+            <EditAnnouncementModal
+                isVisible={showEditModal}
+                onClose={() => { setShowEditModal(false); setEditAnnouncement(null); }}
+                announcement={editAnnouncement}
+                onAnnouncementUpdated={handleAnnouncementUpdated}
             />
         </div>
     );

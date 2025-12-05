@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 // Import Layout Components (Adjust paths if needed)
 import Sidebar from './dashboard/Sidebar'; 
 import DashboardHeader from './dashboard/DashboardHeader';
+import AnnouncementsList from '../components/AnnouncementsList';
 
 // Import Content Pages
 import ProfilePage from './dashboard/ProfilePage';
@@ -35,6 +36,9 @@ const StudentDashboardPage = () => {
 
                 {/* Main Content Body */}
                 <main className="p-4 sm:p-6">
+                    <div className="max-w-3xl mb-6">
+                        <AnnouncementsList limit={5} />
+                    </div>
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">
                         Student Dashboard
                     </h1>

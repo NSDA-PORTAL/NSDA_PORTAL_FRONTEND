@@ -1,8 +1,9 @@
-const API_BASE_URL = 'http://localhost:8080/api'; 
+const API_BASE_URL = import.meta.env.VITE_API_URL; 
 
 export async function apiClient(endpoint, options = {}) {
-    // Rule 3: Attach authToken from localStorage as a Bearer Token
-    const token = localStorage.getItem('authToken'); 
+    // Attach auth token from localStorage as a Bearer Token
+    // The app stores the token under the key 'token' (AuthContext uses 'token')
+    const token = localStorage.getItem('token'); 
     
     const headers = {
         'Content-Type': 'application/json',

@@ -1,10 +1,11 @@
-// Base URL for your API, assuming the announcements endpoint is /api/announcements
-const ANNOUNCEMENTS_API_BASE = '/api/announcements';
+// Base URL for your API, using Vite env var so we can point to deployed backend
+const API_BASE = import.meta.env.VITE_API_URL || '';
+const ANNOUNCEMENTS_API_BASE = `${API_BASE}/api/announcements`;
 
 // Helper function to get the auth token from localStorage
 const getAuthToken = () => {
-    // Assuming the token is stored under 'authToken' or similar key
-    return localStorage.getItem('authToken'); 
+    // Auth token is stored under 'token' by the AuthContext
+    return localStorage.getItem('token');
 };
 
 /**
@@ -61,6 +62,38 @@ export const createAnnouncement = async (announcementData) => {
         return data.data;
     } catch (error) {
         console.error("API Error (createAnnouncement):", error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Updates an announcement by ID.
+ * @param {string} id - Announcement ID
+ * @param {object} updateData - { title?, message?, category? }
+ * @returns {Promise<object>} Updated announcement
+ */
+export const updateAnnouncement = async (id, updateData) => {
+    const token = getAuthToken();
+
+    try {
+        const response = await fetch(`${ANNOUNCEMENTS_API_BASE}/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(updateData),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update announcement.');
+        }
+
+        const data = await response.json();
+        return data.data;
+    } catch (error) {
+        console.error('API Error (updateAnnouncement):', error);
         throw error;
     }
 };

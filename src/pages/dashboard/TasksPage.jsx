@@ -9,6 +9,8 @@ import {
 // --- IMPORTANT: Ensure these paths are correct based on your file structure ---
 import TaskSubmissionForm from '../../components/TaskSubmissionForm';
 import TaskSubmissionViewer from '../../components/TaskSubmissionViewer';
+import { useAuth } from '../../context/AuthContext';
+import { fetchStudentAll, fetchTodoTasks, fetchSubmittedTasks, fetchGradedTasks } from '../../services/tasksService';
 
 // --- Sub-Component: Resource Section ---
 const ResourceSection = ({ resources = [], taskId, studentId, onToggleRead }) => { 
@@ -60,7 +62,8 @@ const TasksPage = () => {
     const [showSubmissionModal, setShowSubmissionModal] = useState(null);
     const [showViewerModal, setShowViewerModal] = useState(null);
 
-    const STUDENT_ID = 123;
+    const { user } = useAuth();
+    const STUDENT_ID = user?._id || user?.id || 123;
 
     // MOCK TASKS
     const MOCK_TASKS = [
@@ -108,19 +111,62 @@ const TasksPage = () => {
     ];
 
     useEffect(() => {
-        setIsLoading(true);
-        setError(null);
+        const load = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                let res = [];
+                if (activeFilter === 'All') {
+                    res = await fetchStudentAll();
+                } else if (activeFilter === 'TO_DO') {
+                    res = await fetchTodoTasks();
+                } else if (activeFilter === 'SUBMITTED') {
+                    res = await fetchSubmittedTasks();
+                } else if (activeFilter === 'GRADED') {
+                    res = await fetchGradedTasks();
+                }
 
-        setTimeout(() => {
-            let filteredTasks = MOCK_TASKS;
+                // Normalize tasks returned by backend into the shape expected by the UI
+                const normalized = (res || []).map(t => {
+                    const id = t.taskId || t._id || t.id;
+                    // Map backend submissionStatus to UI status
+                    let status = 'TO_DO';
+                    const ss = (t.submissionStatus || t.status || '').toString().toLowerCase();
+                    if (ss === 'pending-review' || ss === 'pending' || ss === 'submitted') status = 'SUBMITTED';
+                    if (ss === 'graded' || t.finalGrade) status = 'GRADED';
 
-            if (activeFilter !== 'All') {
-                filteredTasks = MOCK_TASKS.filter(task => task.status === activeFilter);
+                    const submissionLink = t.submissionLink || t.submission?.link || null;
+                    const submissionNotes = t.submissionNotes || t.submission?.notes || null;
+
+                    return {
+                        id,
+                        title: t.title,
+                        description: t.description,
+                        deadline: t.deadline || t.taskDeadline || (t.task && t.task.deadline) || null,
+                        status,
+                        resources: t.supportingResources || t.resources || [],
+                        submission: {
+                            link: submissionLink,
+                            notes: submissionNotes
+                        },
+                        // top-level grade/feedback expected by TaskSubmissionViewer
+                        grade: t.finalGrade || t.grade || null,
+                        feedback: t.adminFeedback || t.feedback || null,
+                        createdAt: t.createdAt || (t.task && t.task.createdAt) || Date.now(),
+                        // keep original raw ids handy
+                        raw: t
+                    };
+                });
+
+                setTasks(normalized);
+            } catch (err) {
+                setError(err.message || 'Failed to load tasks');
+            } finally {
+                setIsLoading(false);
             }
+        };
 
-            setTasks(filteredTasks);
-            setIsLoading(false);
-        }, 500);
+        load();
     }, [activeFilter]);
 
     // Submission success
